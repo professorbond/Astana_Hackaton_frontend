@@ -14,7 +14,11 @@ type ApiResponse = {
   by_date: { date: string; amount: number }[];
 };
 
-export default function UploadWidget() {
+interface UploadWidgetProps {
+  token: string;
+}
+
+export default function UploadWidget({ token }: UploadWidgetProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [reply, setReply] = useState<string[] | null>(null);
@@ -34,6 +38,9 @@ export default function UploadWidget() {
     try {
       const res = await fetch("http://127.0.0.1:8000/analyze-expenses", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
 
@@ -81,7 +88,8 @@ export default function UploadWidget() {
   return (
     <CardContent>
       <p className="text-sm text-muted-foreground mb-3">
-        Загрузите банковскую выписку (.pdf, .xlsx или .csv), и AI проанализирует ваши расходы.
+        Загрузите банковскую выписку (.pdf, .xlsx или .csv), и AI проанализирует
+        ваши расходы.
       </p>
 
       {/* Загрузка файла */}

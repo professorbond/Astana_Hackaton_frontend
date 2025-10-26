@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
   Moon,
   Sun,
   Brain,
+  User,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UploadWidget from "@/components/widgets/UploadWidget";
@@ -20,9 +22,43 @@ import CurrencyWidget from "@/components/widgets/CurrencyWidget";
 import TipWidget from "@/components/widgets/TipWidget";
 import FinanceCalculators from "@/components/widgets/FinanceCalculators";
 import ChatWidget from "@/components/widgets/ChatWidget";
+import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
+import UserProfile from "@/components/auth/UserProfile";
+import MyFiles from "@/components/MyFiles";
+
+type AuthState = "login" | "register" | "authenticated";
 
 export default function DashboardPage() {
   const [darkMode, setDarkMode] = useState(false);
+  const [authState, setAuthState] = useState<AuthState>("login");
+  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Проверяем, есть ли сохраненный токен
+    const savedToken = localStorage.getItem("token");
+    if (savedToken) {
+      setToken(savedToken);
+      setAuthState("authenticated");
+    }
+  }, []);
+
+  const handleLogin = (newToken: string) => {
+    setToken(newToken);
+    setAuthState("authenticated");
+  };
+
+  const handleRegister = (newToken: string) => {
+    setToken(newToken);
+    setAuthState("authenticated");
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setUser(null);
+    setAuthState("login");
+  };
 
   const cardVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
@@ -32,14 +68,55 @@ export default function DashboardPage() {
       transition: { delay: i * 0.08, duration: 0.3, ease: "easeOut" },
     }),
     hover: {
-      scale: 1, // без движения
+      scale: 1,
       boxShadow:
-        "0 0 20px rgba(16,185,129,0.4), 0 0 10px rgba(16,185,129,0.2) inset", // 💚 внешний + внутренний glow
+        "0 0 20px rgba(16,185,129,0.4), 0 0 10px rgba(16,185,129,0.2) inset",
       transition: { duration: 0.25, ease: "easeOut" },
     },
   };
 
+  // Если пользователь не авторизован, показываем форму входа/регистрации
+  if (authState !== "authenticated") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          {authState === "login" ? (
+            <LoginForm
+              onLogin={handleLogin}
+              onSwitchToRegister={() => setAuthState("register")}
+            />
+          ) : (
+            <RegisterForm
+              onRegister={handleRegister}
+              onSwitchToLogin={() => setAuthState("login")}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const cards = [
+    {
+      title: (
+        <div className="flex items-center gap-3">
+          <User className="w-7 h-7 text-primary" />
+          <span className="text-2xl font-semibold">Профиль</span>
+        </div>
+      ),
+      content: <UserProfile token={token!} onLogout={handleLogout} />,
+      span: "md:col-span-1",
+    },
+    {
+      title: (
+        <div className="flex items-center gap-3">
+          <FileText className="w-7 h-7 text-primary" />
+          <span className="text-2xl font-semibold">Мои файлы</span>
+        </div>
+      ),
+      content: <MyFiles token={token!} />,
+      span: "md:col-span-2",
+    },
     {
       title: (
         <div className="flex items-center gap-3">
@@ -50,7 +127,6 @@ export default function DashboardPage() {
       content: <ChatWidget />,
       span: "md:col-span-2",
     },
-
     {
       title: (
         <div className="flex items-center gap-3">
@@ -70,23 +146,24 @@ export default function DashboardPage() {
           </span>
         </div>
       ),
-      content: <UploadWidget />,
+      content: <UploadWidget token={token!} />,
       span: "col-span-1 md:col-span-3",
     },
     {
       title: (
         <div className="flex items-center gap-3">
           <Calculator className="w-7 h-7 text-primary" />
-          <span className="text-2xl font-semibold">Финансовые калькуляторы</span>
+          <span className="text-2xl font-semibold">
+            Финансовые калькуляторы
+          </span>
         </div>
       ),
       content: <FinanceCalculators />,
-      // ✅ На маленьких экранах — вся ширина, на больших — 1 колонка
       span: "col-span-3 xl:col-span-2",
     },
     {
       title: (
-        <div className="flex items-center gap-3 ">
+        <div className="flex items-center gap-3">
           <Brain className="w-7 h-7 text-primary" />
           <span className="text-2xl font-semibold">Совет от AI</span>
         </div>
@@ -115,25 +192,29 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <Image
             src="/logo.png"
-            alt="SaveUp Logo"
+            alt="AI Bank Logo"
             width={40}
             height={40}
             priority
           />
-          <h1 className="text-3xl font-bold tracking-tight">SaveUp Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            AI Bank Dashboard
+          </h1>
         </div>
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setDarkMode(!darkMode)}
-          aria-label="Toggle theme"
-        >
-          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label="Toggle theme"
+          >
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </Button>
+        </div>
       </motion.header>
 
-      {/* ✅ Сетка карточек */}
+      {/* Сетка карточек */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {cards.map((card, i) => (
           <motion.div
