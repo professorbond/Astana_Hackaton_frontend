@@ -16,9 +16,13 @@ type ApiResponse = {
 
 interface UploadWidgetProps {
   token: string;
+  onUploadComplete?: () => void;
 }
 
-export default function UploadWidget({ token }: UploadWidgetProps) {
+export default function UploadWidget({
+  token,
+  onUploadComplete,
+}: UploadWidgetProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [reply, setReply] = useState<string[] | null>(null);
@@ -36,7 +40,7 @@ export default function UploadWidget({ token }: UploadWidgetProps) {
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/analyze-expenses", {
+      const res = await fetch("http://localhost:8000/analyze-expenses", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,6 +56,11 @@ export default function UploadWidget({ token }: UploadWidgetProps) {
       const data: ApiResponse = await res.json();
       setReply(formatResponse(data.reply));
       setChartData(data);
+
+      // Вызываем callback для обновления списка файлов
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

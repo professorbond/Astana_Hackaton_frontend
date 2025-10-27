@@ -16,13 +16,9 @@ export const metadata = {
   title: "SaveUp",
   description: "AI-powered finance assistant",
   icons: {
-    icon: [
-      { url: "/favicon.png", type: "image/png" },
-
-    ],
+    icon: [{ url: "/favicon.png", type: "image/png" }],
   },
 };
-
 
 export default function RootLayout({
   children,

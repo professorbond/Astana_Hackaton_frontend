@@ -15,6 +15,7 @@ import {
   Brain,
   User,
   FileText,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UploadWidget from "@/components/widgets/UploadWidget";
@@ -26,6 +27,7 @@ import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import UserProfile from "@/components/auth/UserProfile";
 import MyFiles from "@/components/MyFiles";
+import AdminPanel from "@/components/AdminPanel";
 
 type AuthState = "login" | "register" | "authenticated";
 
@@ -34,6 +36,7 @@ export default function DashboardPage() {
   const [authState, setAuthState] = useState<AuthState>("login");
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     // Проверяем, есть ли сохраненный токен
@@ -41,17 +44,36 @@ export default function DashboardPage() {
     if (savedToken) {
       setToken(savedToken);
       setAuthState("authenticated");
+      fetchUserData(savedToken);
     }
   }, []);
 
-  const handleLogin = (newToken: string) => {
-    setToken(newToken);
-    setAuthState("authenticated");
+  const fetchUserData = async (authToken: string) => {
+    try {
+      const response = await fetch("http://localhost:8000/me", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error("Ошибка получения данных пользователя:", error);
+    }
   };
 
-  const handleRegister = (newToken: string) => {
+  const handleLogin = async (newToken: string) => {
     setToken(newToken);
     setAuthState("authenticated");
+    await fetchUserData(newToken);
+  };
+
+  const handleRegister = async (newToken: string) => {
+    setToken(newToken);
+    setAuthState("authenticated");
+    await fetchUserData(newToken);
   };
 
   const handleLogout = () => {
@@ -96,7 +118,11 @@ export default function DashboardPage() {
     );
   }
 
-  const cards = [
+  // Определяем, является ли пользователь админом
+  const isAdmin = user?.role === "admin";
+
+  // Карточки для обычных пользователей
+  const userCards = [
     {
       title: (
         <div className="flex items-center gap-3">
@@ -114,7 +140,7 @@ export default function DashboardPage() {
           <span className="text-2xl font-semibold">Мои файлы</span>
         </div>
       ),
-      content: <MyFiles token={token!} />,
+      content: <MyFiles token={token!} refreshTrigger={refreshTrigger} />,
       span: "md:col-span-2",
     },
     {
@@ -146,7 +172,12 @@ export default function DashboardPage() {
           </span>
         </div>
       ),
-      content: <UploadWidget token={token!} />,
+      content: (
+        <UploadWidget
+          token={token!}
+          onUploadComplete={() => setRefreshTrigger((prev) => prev + 1)}
+        />
+      ),
       span: "col-span-1 md:col-span-3",
     },
     {
@@ -172,6 +203,32 @@ export default function DashboardPage() {
       span: "col-span-3 xl:col-span-1",
     },
   ];
+
+  // Карточки для администратора
+  const adminCards = [
+    {
+      title: (
+        <div className="flex items-center gap-3">
+          <User className="w-7 h-7 text-primary" />
+          <span className="text-2xl font-semibold">Профиль</span>
+        </div>
+      ),
+      content: <UserProfile token={token!} onLogout={handleLogout} />,
+      span: "md:col-span-1",
+    },
+    {
+      title: (
+        <div className="flex items-center gap-3">
+          <BarChart3 className="w-7 h-7 text-primary" />
+          <span className="text-2xl font-semibold">Панель администратора</span>
+        </div>
+      ),
+      content: <AdminPanel token={token!} />,
+      span: "col-span-1 md:col-span-3",
+    },
+  ];
+
+  const cards = isAdmin ? adminCards : userCards;
 
   return (
     <motion.div

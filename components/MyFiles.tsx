@@ -16,16 +16,17 @@ interface FileAnalysis {
 
 interface MyFilesProps {
   token: string;
+  refreshTrigger?: number;
 }
 
-export default function MyFiles({ token }: MyFilesProps) {
+export default function MyFiles({ token, refreshTrigger }: MyFilesProps) {
   const [files, setFiles] = useState<FileAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchMyFiles();
-  }, [token]);
+  }, [token, refreshTrigger]);
 
   const fetchMyFiles = async () => {
     try {
