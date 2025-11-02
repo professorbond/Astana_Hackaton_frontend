@@ -66,6 +66,30 @@ export default function AdminPanel({ token }: AdminPanelProps) {
     }
   };
 
+  // Маппинг категорий для красивого отображения
+  const getCategoryDisplayName = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "Не указано": "Не указано",
+      "Переводы/Пополнения": "Переводы",
+      Покупки: "Покупки",
+      "Покупки онлайн": "Покупки онлайн",
+      Продукты: "Продукты",
+      Транспорт: "Транспорт",
+      "Коммунальные услуги": "Коммунальные услуги",
+      Медицина: "Медицина",
+      Образование: "Образование",
+      Развлечения: "Развлечения",
+      "Банкомат/Снятие": "Банкомат",
+      Переводы: "Переводы",
+      "transfer/deposit": "Переводы",
+      purchase: "Покупки",
+      utilities: "Коммунальные услуги",
+      cash: "Банкомат",
+    };
+
+    return categoryMap[category] || category;
+  };
+
   // Подсчет общей статистики
   const totalUsers = reports.length;
   const totalFiles = reports.reduce(
@@ -159,7 +183,9 @@ export default function AdminPanel({ token }: AdminPanelProps) {
                   key={category}
                   className="flex justify-between items-center p-3 bg-gray-50 rounded-md"
                 >
-                  <span className="text-sm font-medium">{category}:</span>
+                  <span className="text-sm font-medium">
+                    {getCategoryDisplayName(category)}:
+                  </span>
                   <span className="font-bold text-green-600">
                     {amount.toLocaleString("ru-RU")} ₸
                   </span>
@@ -226,7 +252,7 @@ export default function AdminPanel({ token }: AdminPanelProps) {
                                   key={idx}
                                   className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded"
                                 >
-                                  {cat.category}:{" "}
+                                  {getCategoryDisplayName(cat.category)}:{" "}
                                   {cat.amount.toLocaleString("ru-RU")} ₸
                                 </span>
                               ))}
